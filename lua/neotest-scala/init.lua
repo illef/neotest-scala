@@ -6,7 +6,7 @@ local utils = require("neotest-scala.utils")
 ---@type neotest.Adapter
 local ScalaNeotestAdapter = { name = "neotest-scala" }
 
-ScalaNeotestAdapter.root = lib.files.match_root_pattern("build.sbt")
+ScalaNeotestAdapter.root = lib.files.match_root_pattern("build.sbt", "pom.xml")
 
 ---@async
 ---@param file_path string
@@ -113,6 +113,12 @@ end
 ---Get project name from build file.
 ---@return string|nil
 local function get_project_name(path, runner)
+    if runner == "bloop" then
+        local bloop_project = get_bloop_project_name()
+        if bloop_project then
+            return bloop_project
+        end
+    end
     local root = ScalaNeotestAdapter.root(path)
     local build_file = root .. "/build.sbt"
     local success, lines = pcall(lib.files.read_lines, build_file)
@@ -123,12 +129,6 @@ local function get_project_name(path, runner)
         local project = line:match('^name := "(.+)"')
         if project then
             return project
-        end
-    end
-    if runner == "bloop" then
-        local bloop_project = get_bloop_project_name()
-        if bloop_project then
-            return bloop_project
         end
     end
     return nil
